@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Arisan 10 Hari - 8 Orang</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1 { color: #2e86de; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #aaa; padding: 8px; text-align: center; }
+    th { background: #f2f2f2; }
+    .total { font-weight: bold; background: #dff0d8; }
+    .grand-total-row td { background: #fff3cd; font-weight: bold; }
+    input[type="checkbox"] {
+      transform: scale(1.6);
+      cursor: pointer;
+    }
+    #resetBtn {
+      padding: 10px 20px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #resetBtn:hover {
+      background-color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Daftar Pembayaran Arisan</h1>
+  <p>Centang kotak untuk setiap pembayaran harian Rp5.000. Data tersimpan otomatis.</p>
+
+  <button id="resetBtn" onclick="resetManual()">Reset Manual</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nama</th>
+        <script>
+          for (let i = 1; i <= 10; i++) {
+            document.write(`<th>Hari ${i}</th>`);
+          }
+          document.write('<th>Total (Rp)</th>');
+        </script>
+      </tr>
+    </thead>
+    <tbody id="arisanTable"></tbody>
+    <tfoot>
+      <tr class="grand-total-row">
+        <td colspan="11">Total Keseluruhan</td>
+        <td id="grandTotal">Rp0</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <script>
+    const peserta = ["Ayu", "Budi", "Cici", "Dedi", "Eka", "Fajar", "Gina", "Hadi"];
+    const totalHari = 10;
+    const nominal = 5000;
+    const table = document.getElementById("arisanTable");
+
+    function loadData() {
+      const data = localStorage.getItem("arisanData");
+      return data ? JSON.parse(data) : Array(peserta.length).fill().map(() => Array(totalHari).fill(false));
+    }
+
+    function saveData() {
+      localStorage.setItem("arisanData", JSON.stringify(ceklis));
+    }
+
+    function hitungTotal(index) {
+      let total = 0;
+      for (let hari = 0; hari < totalHari; hari++) {
+        const cek = document.getElementById(`cek${index}_${hari}`);
+        if (cek.checked) {
+          total += nominal;
+        }
+      }
+      document.getElementById(`total${index}`).innerText = `Rp${total.toLocaleString('id-ID')}`;
+      hitungGrandTotal();
+    }
+
+    function hitungGrandTotal() {
+      let grand = 0;
+      for (let i = 0; i < peserta.length; i++) {
+        for (let j = 0; j < totalHari; j++) {
+          if (ceklis[i][j]) {
+            grand += nominal;
+          }
+        }
+      }
+      document.getElementById("grandTotal").innerText = `Rp${grand.toLocaleString('id-ID')}`;
+    }
+
+    function cekSemuaSudahBayar() {
+      return ceklis.every(row => row.every(status => status));
+    }
+
+    function resetDataJikaSelesai() {
+      if (cekSemuaSudahBayar()) {
+        alert("Semua peserta sudah membayar penuh! Data akan di-reset.");
+        localStorage.removeItem("arisanData");
+        location.reload();
+      }
+    }
+
+    function resetManual() {
+      if (confirm("Yakin ingin reset semua data arisan?")) {
+        localStorage.removeItem("arisanData");
+        location.reload();
+      }
+    }
+
+    let ceklis = loadData();
+
+    peserta.forEach((nama, rowIndex) => {
+      const tr = document.createElement("tr");
+      let rowHTML = `<td>${nama}</td>`;
+
+      for (let hari = 0; hari < totalHari; hari++) {
+        const checked = ceklis[rowIndex][hari] ? "checked" : "";
+        rowHTML += `<td><input type="checkbox" id="cek${rowIndex}_${hari}" ${checked} onchange="updateCeklis(${rowIndex}, ${hari})"></td>`;
+      }
+
+      rowHTML += `<td class="total" id="total${rowIndex}">Rp0</td>`;
+      tr.innerHTML = rowHTML;
+      table.appendChild(tr);
+    });
+
+    function updateCeklis(row, hari) {
+      const isChecked = document.getElementById(`cek${row}_${hari}`).checked;
+      ceklis[row][hari] = isChecked;
+      saveData();
+      hitungTotal(row);
+      resetDataJikaSelesai();
+    }
+
+    // Hitung semua total awal saat load
+    peserta.forEach((_, i) => hitungTotal(i));
+  </script>
+
+</body>
+</html>
